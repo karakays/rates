@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import requests, argparse
+import sys, requests, argparse
 
 fixer_url = "http://api.fixer.io/latest"
 base_key = "base"
@@ -26,7 +26,7 @@ def get_rate(currency_list, amount=None):
     
     if "error" in json:
         print "rates.py: error: %s" % (json["error"])
-        return
+        sys.exit(1)
 
     rates = json["rates"]
 
@@ -43,15 +43,18 @@ def get_rate(currency_list, amount=None):
             res += "{0} not available.".format(t)
 
         print res
-    
-parser = argparse.ArgumentParser()
-parser.add_argument("-v", "-verbose", help="verbose output", action="store_true")
-parser.add_argument("-a", "--amount", type=float, help="amount you want to convert")
-parser.add_argument("currency", nargs="+", help="currencies")
 
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "-verbose", help="verbose output", action="store_true")
+    parser.add_argument("-a", "--amount", type=float, help="amount you want to convert")
+    parser.add_argument("currency", nargs="+", help="currencies")
 
-currency = args.currency
-amount = args.amount
+    args = parser.parse_args()
 
-get_rate(currency, amount)
+    currency = args.currency
+    amount = args.amount
+
+    get_rate(currency, amount)
+
+main()
