@@ -57,4 +57,6 @@ def main():
 
     get_rate(currency, amount)
 
-main()
+
+if __name__ == '__main__':
+    main()
