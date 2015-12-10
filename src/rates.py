@@ -1,12 +1,30 @@
 #!/usr/bin/env python
 
-import sys, requests, argparse
+import sys, requests, argparse, util
 
-fixer_url = "http://api.fixer.io/latest"
+fixer_url = "http://api.fixer.io/"
 base_key = "base"
 sym_key = "symbols"
 
-def get_rate(currency_list, amount=None):
+class Rate(object):
+    def __init__(self, base, target, rate, amount = None):
+        self.base = base
+        self.target = target
+        self.rate = float(rate) if rate else None
+        self.amount = amount
+
+    def __str__(self):
+        if not self.rate:
+            return 'Rate %s/%s is not available.' % (self.base, self.target)
+
+        r = "{0}/{1} = {2:.3f}".format(self.base, self.target, self.rate)
+
+        if self.amount:
+            r += ". {0:.3f} {1} is {2:.3f} {3}".format(self.amount, self.base, (self.amount * self.rate), self.target)
+
+        return r
+
+def get_rate(currency_list, amount=None, date=None):
 
     request_params = {}
     
@@ -20,7 +38,9 @@ def get_rate(currency_list, amount=None):
         sym_str = sep.join(symbols)
         request_params[sym_key] = sym_str
     
-    response = requests.get(fixer_url, request_params)
+    url = (fixer_url + '/' + date.__str__()) if date else (fixer_url + '/latest')
+
+    response = requests.get(url, request_params)
     
     json = response.json()
     
@@ -32,31 +52,24 @@ def get_rate(currency_list, amount=None):
 
     targs = symbols if symbols else rates
 
-    for t in targs:
-        res = ""
-        if t in rates:
-            rate = float(rates[t])
-            res += "{0}/{1} = {2:.3f}".format(base, t, rate)
-            if amount:
-                res += ". {0:.3f} {1} is {2:.3f} {3}".format(amount, base, (amount * rate), t)
-        else:
-            res += "{0} not available.".format(t)
-
-        print res
+    return [Rate(base, t, rates.get(t), amount) for t in targs]
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "-verbose", help="verbose output", action="store_true")
     parser.add_argument("-a", "--amount", type=float, help="amount you want to convert")
+    parser.add_argument("-d", "--date", type=util.parse_date, help="rates from specified date as <yyyy-mm-dd>")    
     parser.add_argument("currency", nargs="+", help="currencies")
 
     args = parser.parse_args()
 
     currency = args.currency
     amount = args.amount
+    date = args.date
 
-    get_rate(currency, amount)
+    rates = get_rate(currency, amount, date)
 
+    for r in rates: print r
 
 if __name__ == '__main__':
     main()
